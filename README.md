@@ -4,7 +4,7 @@
 
 ## Tasks
 
-On-premise setup:
+### On-premise setup:
 
 - [x] Deploy Kafka in Docker Compose
 
@@ -16,4 +16,10 @@ On-premise setup:
 
 - [ ] Stream Rides data to a second topic
 
-- [ ] Merge and filter data from topics with ByteWax 
+- [ ] Merge and filter data from topics with ByteWax
+
+
+### Kubernetes Setup
+
+- [ ] Deploy Kafka on Kubernetes
+- [ ] ...
