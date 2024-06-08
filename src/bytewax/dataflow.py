@@ -1,42 +1,99 @@
 #python -m bytewax.run cm-bytewax
 
+import datetime
+from currency_converter import CurrencyConverter
+
 from bytewax.connectors.kafka import operators as kop, KafkaSinkMessage
 from bytewax import operators as op
 from bytewax.dataflow import Dataflow
 
 import json
 
-print('Starting dataflow..')
-# Kafka broker configuration
-brokers = ["localhost:9092"]
 
-# Define the dataflow
-flow = Dataflow("filter_high_spending")
+## HELPER FUNCTIONS
 
-# Define the Kafka input
-kinp = kop.input("kafka-in", flow, brokers=brokers, topics=["users"])
+currency_converter = CurrencyConverter()
 
 # Parse JSON records
 def parse_json(record):
     value = record.value
     return json.loads(value)
 
-parsed = op.map("parse_json", kinp.oks, parse_json)
 
 # Filter records where spending is higher than 70
-def filter_high_spending(record):
-    return record["spending"] >= 70
+def filter_null_price(record):
+    return record["price"] > 0
 
-filtered = op.filter("filter_high_spending", parsed, filter_high_spending)
+
+def miles2km(record):
+    m2km_value = 0.621371
+
+    record['distance'] = float(round(record['distance']*m2km_value, 2))
+
+    return record
+
+
+def usd2brl(record):
+    record['price'] = currency_converter.convert(record['price'], 'USD', 'BRL')
+
+    return record
+
+
+def check_dynamic_fare(record):
+    record['flag_dynamic_fare'] = False if record['surge_multiplier'] <= 1 else True
+
+    return record
+
+
+def add_processing_time(record):
+    record['dt_processing_timestamp'] = datetime.datetime.now().strftime("%y-%m-%d %H:%M:%S%f")
+
+    return record
+
+# TODO: this is just for debugging purposes
+def show_record(record): 
+
+    print(record['cpf'])
+
+    return record
+
 
 # Serialize records back to JSON
 def serialize_json(record):
     return json.dumps(record).encode('utf-8')
+## ------
 
-serialized = op.map("serialize_json", filtered, serialize_json)
+
+print('Starting dataflow..')
+# Kafka broker configuration
+brokers = ["localhost:9092"]
+
+# Define the dataflow
+flow = Dataflow("terating_rides")
+
+# Define the Kafka input
+kinp = kop.input(
+    "kafka-in", 
+    flow, 
+    brokers=brokers, 
+    topics=["rides"],
+    add_config = {'group.id': 'bytewax', 'enable.auto.commit': True}
+)
+
+event_parsed = op.map("parse_json", kinp.oks, parse_json)
+
+event_filtered = op.filter("filter_null_price", event_parsed, filter_null_price)
+
+event_transformed = op.map("miles2km", event_filtered, miles2km)
+event_transformed = op.map("usd2brl", event_transformed, usd2brl)
+event_transformed = op.map("add_processing_time", event_transformed, add_processing_time)
+event_transformed = op.map("check_dynamic_fare", event_transformed, check_dynamic_fare)
+# _ = op.map("show_record", event_transformed, show_record) # TODO: this is just for debugging purposes
+
+event_serialized = op.map("serialize_json", event_transformed, serialize_json)
 
 # Define the Kafka output
-processed = op.map("map_to_kafka_message", serialized, lambda x: KafkaSinkMessage(None, x))
-kop.output("kafka-out", processed, brokers=brokers, topic="users-high-spending")
+event_processed = op.map("map_to_kafka_message", event_serialized, lambda x: KafkaSinkMessage(None, x))
+kop.output("kafka-out", event_processed, brokers=brokers, topic="rides-refined")
 
 print('Dataflow running..')
