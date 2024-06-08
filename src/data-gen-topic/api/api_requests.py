@@ -67,8 +67,8 @@ class Requests(object):
         dt_request = requests.get(url=url, params=params)
         for url in [url]:
             try:
-                response = requests.get(url)
-                response.raise_for_status()
+                # response = requests.get(url)
+                # response.raise_for_status()
                 dict_request = dt_request.json()
 
             except HTTPError as http_err:
