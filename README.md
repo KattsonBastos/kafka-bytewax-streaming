@@ -1,6 +1,6 @@
 # Kafka Event Processing with Bytewax
 
-(TODO)
+This repository contains a basic implementation of stream processing with Kafka and Bytewax.
 
 ## Tasks
 
@@ -8,18 +8,20 @@
 
 - [x] Deploy Kafka in Docker Compose
 
-- [x] Implementation of users data gen
+- [x] Implementation of rides data gen
 
-- [x] User Streaming to a Kafka topic
+- [x] Rides Streaming to a Kafka topic
 
-- [x] Processing user data with Bytewax
+- [x] Processing ride data with Bytewax
 
-- [ ] Stream Rides data to a second topic
-
-- [ ] Merge and filter data from topics with ByteWax
+- [x] Stream Rides data to a second topic
 
 
-### Kubernetes Setup
 
-- [ ] Deploy Kafka on Kubernetes
-- [ ] ...
+------
+### Data Treatment List
+- [x] Convert miles to km
+- [x] Remove null price
+- [x] Convert price from USD to BRL
+- [x] Add flag dynamic fare
+- [ ] Enrich with users data
