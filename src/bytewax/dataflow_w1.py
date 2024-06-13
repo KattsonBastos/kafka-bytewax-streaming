@@ -2,6 +2,7 @@
 
 import datetime
 from currency_converter import CurrencyConverter
+from confluent_kafka import OFFSET_STORED
 
 from bytewax.connectors.kafka import operators as kop, KafkaSinkMessage
 from bytewax import operators as op
@@ -53,7 +54,7 @@ def add_processing_time(record):
 # TODO: this is just for debugging purposes
 def show_record(record): 
 
-    print(record['cpf'])
+    print(record['user_id'])
 
     return record
 
@@ -72,23 +73,25 @@ brokers = ["localhost:9092"]
 flow = Dataflow("terating_rides")
 
 # Define the Kafka input
+add_config = {"group.id": "consumer_group", "enable.auto.commit": "true"}
 kinp = kop.input(
     "kafka-in", 
     flow, 
     brokers=brokers, 
     topics=["rides"],
-    add_config = {'group.id': 'bytewax', 'enable.auto.commit': True}
+    add_config = add_config,
+    starting_offset=OFFSET_STORED,
 )
 
 event_parsed = op.map("parse_json", kinp.oks, parse_json)
 
-event_filtered = op.filter("filter_null_price", event_parsed, filter_null_price)
+event_filtered = event_parsed#op.filter("filter_null_price", event_parsed, filter_null_price)
 
 event_transformed = op.map("miles2km", event_filtered, miles2km)
 event_transformed = op.map("usd2brl", event_transformed, usd2brl)
 event_transformed = op.map("add_processing_time", event_transformed, add_processing_time)
 event_transformed = op.map("check_dynamic_fare", event_transformed, check_dynamic_fare)
-# _ = op.map("show_record", event_transformed, show_record) # TODO: this is just for debugging purposes
+_ = op.map("show_record", event_transformed, show_record) # TODO: this is just for debugging purposes
 
 event_serialized = op.map("serialize_json", event_transformed, serialize_json)
 
