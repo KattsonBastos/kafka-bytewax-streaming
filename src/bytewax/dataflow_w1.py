@@ -1,10 +1,12 @@
-#python -m bytewax.run cm-bytewax
+# python -m bytewax.run -r db_dir/ cm-bytewax
+# python -m bytewax.run dataflow --sqlite-directory . --epoch-interval 0
+# python3 -m bytewax.run -r db_dir/ -s 1 -b 0 dataflow_w1
 
 import datetime
 from currency_converter import CurrencyConverter
 from confluent_kafka import OFFSET_STORED
 
-from bytewax.connectors.kafka import operators as kop, KafkaSinkMessage
+from bytewax.connectors.kafka import operators as kop, KafkaSourceMessage, KafkaSinkMessage
 from bytewax import operators as op
 from bytewax.dataflow import Dataflow
 
@@ -16,7 +18,7 @@ import json
 currency_converter = CurrencyConverter()
 
 # Parse JSON records
-def parse_json(record):
+def parse_json(record: KafkaSourceMessage) -> dict:
     value = record.value
     return json.loads(value)
 
@@ -56,7 +58,7 @@ def show_record(record):
 
     print(record['user_id'])
 
-    return record
+    return None
 
 
 # Serialize records back to JSON
@@ -67,18 +69,22 @@ def serialize_json(record):
 
 print('Starting dataflow..')
 # Kafka broker configuration
-brokers = ["localhost:9092"]
+brokers = ["kafka:9092"]
 
 # Define the dataflow
-flow = Dataflow("terating_rides")
+flow = Dataflow("treating_rides")
 
 # Define the Kafka input
-add_config = {"group.id": "consumer_group", "enable.auto.commit": "true"}
+add_config = {
+    "group.id": "consumer_group1", 
+    "enable.auto.commit": "true", 
+    "auto.commit.interval.ms": 1}
 kinp = kop.input(
     "kafka-in", 
     flow, 
     brokers=brokers, 
     topics=["rides"],
+    # batch_size=1,
     add_config = add_config,
     starting_offset=OFFSET_STORED,
 )

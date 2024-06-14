@@ -27,8 +27,6 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
-      # Replace CLUSTER_ID with a unique base64 UUID using "bin/kafka-storage.sh random-uuid" 
-      # See https://docs.confluent.io/kafka/operations-tools/kafka-tools.html#kafka-storage-sh
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
 
   schema-registry:
@@ -67,7 +65,6 @@ services:
       CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      # CLASSPATH required due to CC-2422
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-7.5.0.jar
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
@@ -96,3 +93,50 @@ services:
       CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
       CONFLUENT_METRICS_TOPIC_REPLICATION: 1
       PORT: 9021
+
+  pinot-controller:
+    image: apachepinot/pinot:0.12.0
+    hostname: pinot-controller
+    container_name: pinot-controller
+    ports:
+      - "9000:9000"
+    command:
+      - StartController
+      - -zkAddress
+      - zookeeper:2181
+      - -controllerHost
+      - pinot-controller
+      - -controllerPort
+      - "9000"
+
+  pinot-server:
+    image: apachepinot/pinot:0.12.0
+    hostname: pinot-server
+    container_name: pinot-server
+    ports:
+      - "8098:8098"
+    command:
+      - StartServer
+      - -zkAddress
+      - zookeeper:2181
+
+  pinot-broker:
+    image: apachepinot/pinot:0.12.0
+    hostname: pinot-broker
+    container_name: pinot-broker
+    ports:
+      - "8099:8099"
+    command:
+      - StartBroker
+      - -zkAddress
+      - zookeeper:2181
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000

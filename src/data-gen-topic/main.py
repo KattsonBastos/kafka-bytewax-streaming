@@ -10,7 +10,7 @@ from api import api_requests
 from objects import users as users_obj, rides as rides_obj
 from config import URLS
 
-params = {'size': 5000}
+params = {'size': 10}
 users = users_obj.Users()
 rides = rides_obj.Rides()
 api = api_requests.Requests()

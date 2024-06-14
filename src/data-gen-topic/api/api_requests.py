@@ -22,7 +22,7 @@ class Requests(object):
             numpy.ndarray: An array of random user IDs.
         """
 
-        return np.random.randint(1, 10000, size=size)
+        return np.random.randint(1, 1000000, size=size)
 
     @staticmethod
     def gen_cpf():

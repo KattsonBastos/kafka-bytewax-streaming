@@ -26,6 +26,7 @@ from bytewax.connectors.stdio import StdOutSink
 from bytewax.dataflow import Dataflow
 from bytewax.inputs import FixedPartitionedSource, StatefulSourcePartition, batch_async
 from bytewax.operators.window import EventClockConfig, TumblingWindow
+from bytewax.connectors.kafka import operators as kop, KafkaSourceMessage, KafkaSinkMessage
 
 import websockets
 from ticker_pb2 import Ticker
@@ -34,6 +35,8 @@ from ticker_pb2 import Ticker
 ticker_list = ['AMZN', 'MSFT']
 # we can also use BTC-USD outside of stock exchange opening hours
 #ticker_list = ['BTC-USD']
+
+brokers = ["localhost:9092"]
 
 # Function deserializing Protobuf messages
 def deserialize(message):
@@ -73,10 +76,10 @@ class YahooPartition(StatefulSourcePartition):
     def __init__(self, worker_tickers):
         '''
         Get deserialized messages from Yahoo Finance and batch them
-        up to 0,5 seconds or 100 messages.
+        up to 0,5 seconds or 10 messages.
         '''
         agen = _ws_agen(worker_tickers)
-        self._batcher = batch_async(agen, timedelta(seconds=0.5), 100)
+        self._batcher = batch_async(agen, timedelta(seconds=0.5), 10)
 
     def next_batch(self):
         '''
@@ -136,6 +139,11 @@ inp = op.input(
 # priceHint: 2
 # )
 
+# Serialize records back to JSON
+def serialize_json(record):
+    return json.dumps(record).encode('utf-8')
+
+
 def build_array():
     '''
     Build an empty array
@@ -155,16 +163,16 @@ def get_event_time(ticker):
     return datetime.utcfromtimestamp(ticker.time/1000).replace(tzinfo=timezone.utc)
 
 # Configure the `fold_window` operator to use the event time
-clock_config = EventClockConfig(get_event_time, wait_for_system_duration=timedelta(seconds=10))
+clock_config = EventClockConfig(get_event_time, wait_for_system_duration=timedelta(seconds=60))
 
 # Add a 5 seconds tumbling window, that starts at the beginning of the minute
 align_to = datetime.now(timezone.utc)
 align_to = align_to - timedelta(
     seconds=align_to.second, microseconds=align_to.microsecond
 )
-window_config = TumblingWindow(length=timedelta(seconds=60), align_to=align_to)
-window = win.fold_window("1_min", inp, clock_config, window_config, build_array, acc_values)
-op.inspect("inspect", window)
+window_config = TumblingWindow(length=timedelta(seconds=10), align_to=align_to)
+record = win.fold_window("1_min", inp, clock_config, window_config, build_array, acc_values)
+# op.inspect("inspect", record)
 
 def calculate_features(ticker__data):
     '''
@@ -173,10 +181,8 @@ def calculate_features(ticker__data):
     '''
     ticker, data = ticker__data
     win_data = data[1]
-    return (
-        ticker,
-        data[0], # metadata
-        {
+    return {
+            "ticker": ticker,
             "time":win_data[-1][0],
             "min":np.amin(win_data[:,1]), 
             "max":np.amax(win_data[:,1]),
@@ -184,9 +190,14 @@ def calculate_features(ticker__data):
             "last_price":win_data[:,1][0],
             "volume":win_data[:,2][0] - win_data[:,2][-1]
         }
-    )
 
-features = op.map("features", window, calculate_features)
+record = op.map("features", record, calculate_features)
 print('Running outputs..')
 # Output
-op.output("out", features, StdOutSink())
+# op.output("out", record, StdOutSink())
+
+event_serialized = op.map("serialize_json", record, serialize_json)
+
+
+event_processed = op.map("map_to_kafka_message", event_serialized, lambda x: KafkaSinkMessage(None, x))
+kop.output("kafka-out", event_processed, brokers=brokers, topic="stocks")
