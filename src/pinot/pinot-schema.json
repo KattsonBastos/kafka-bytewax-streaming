@@ -1,0 +1,21 @@
+{
+    "schemaName": "sch_output_bytewax_enriched_rides_events",
+    "dimensionFieldSpecs": [
+      {
+        "name": "user_id",
+        "dataType": "LONG"
+      },
+      {
+        "name": "processing_time",
+        "dataType": "STRING"
+      }
+    ],
+    "dateTimeFieldSpecs": [
+      {
+        "name": "event_time",
+        "dataType": "STRING",
+        "format": "1:MILLISECONDS:SIMPLE_DATE_FORMAT:yyyy-MM-dd HH:mm:ss.SSSSSS",
+        "granularity": "1:DAYS"
+      }
+    ]
+  }

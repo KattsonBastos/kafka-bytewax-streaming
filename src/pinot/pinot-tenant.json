@@ -1,0 +1,5 @@
+{
+    "tenantRole" : "BROKER",
+    "tenantName" : "sampleBrokerTenant",
+    "numberOfInstances" : 3
+}

@@ -48,8 +48,15 @@ def check_dynamic_fare(record):
     return record
 
 
+def add_event_time(record):
+
+    record['event_time'] = str(datetime.datetime.strptime(record['dt_current_timestamp'], "%Y-%m-%d %H:%M:%S.%f"))
+
+    return record
+
+
 def add_processing_time(record):
-    record['dt_processing_timestamp'] = datetime.datetime.now().strftime("%y-%m-%d %H:%M:%S%f")
+    record['processing_time'] = str(datetime.datetime.now())
 
     return record
 
@@ -61,6 +68,18 @@ def show_record(record):
     return None
 
 
+def select_keys(record):
+
+    key_list = [
+        'user_id', 
+        'event_time', 
+        'processing_time'
+    ]
+
+    record = {key: record[key] for key in key_list}
+
+    return record
+
 # Serialize records back to JSON
 def serialize_json(record):
     return json.dumps(record).encode('utf-8')
@@ -69,7 +88,7 @@ def serialize_json(record):
 
 print('Starting dataflow..')
 # Kafka broker configuration
-brokers = ["kafka:9092"]
+brokers = ["localhost:9092"]
 
 # Define the dataflow
 flow = Dataflow("treating_rides")
@@ -96,13 +115,15 @@ event_filtered = event_parsed#op.filter("filter_null_price", event_parsed, filte
 event_transformed = op.map("miles2km", event_filtered, miles2km)
 event_transformed = op.map("usd2brl", event_transformed, usd2brl)
 event_transformed = op.map("add_processing_time", event_transformed, add_processing_time)
+event_transformed = op.map("add_event_time", event_transformed, add_event_time)
 event_transformed = op.map("check_dynamic_fare", event_transformed, check_dynamic_fare)
+event_transformed = op.map("select_keys", event_transformed, select_keys)
 _ = op.map("show_record", event_transformed, show_record) # TODO: this is just for debugging purposes
 
 event_serialized = op.map("serialize_json", event_transformed, serialize_json)
 
 # Define the Kafka output
 event_processed = op.map("map_to_kafka_message", event_serialized, lambda x: KafkaSinkMessage(None, x))
-kop.output("kafka-out", event_processed, brokers=brokers, topic="rides-refined")
+kop.output("kafka-out", event_processed, brokers=brokers, topic="output-bytewax-enriched-rides")
 
 print('Dataflow running..')
