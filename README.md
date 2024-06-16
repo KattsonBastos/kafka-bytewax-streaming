@@ -138,11 +138,15 @@
 
 ### Results Found
 <p align="justify">
-&ensp;&ensp;&ensp;&ensp;Bytewax seems very interesting. With a simple worker running in the terminal with python, it was capable of processing an average of 500 events per second as shows the image bellow:
+&ensp;&ensp;&ensp;&ensp;Bytewax seems very interesting. With a simple worker running in pure Python, it was capable of processing an average of 500 events per second, as shows the image bellow:
 </p>
 
 <p align="center">
   <img src="./images/processing_per_time.png" >
+</p>
+
+<p align="justify">
+&ensp;&ensp;&ensp;&ensp;Although we implemented a very simple example here, Bytewax's processing capacity is actually quite interesting.
 </p>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

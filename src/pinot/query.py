@@ -19,6 +19,6 @@ PINOT_QUERY = """
 while True:
     curs.execute(PINOT_QUERY)
     for row in curs:
-        print(row)
+        print('processed in the last second: ', row[0])
     
     time.sleep(1)
