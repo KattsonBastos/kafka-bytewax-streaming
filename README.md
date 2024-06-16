@@ -27,10 +27,12 @@
     <li>
       <a href="#about-the-project">About The Project</a>
       <ul>
-        <li><a href="#development-plan">Development Plan</a></li>
         <li><a href="#business-context">Business Context</a></li>
+        <li><a href="#development-plan">Development Plan</a></li>
         <li><a href="#built-with">Built With</a></li>
         <li><a href="#solution-description">Solution Description</a></li>
+        <li><a href="#results-found">Results Found</a></li>
+        <li><a href="#next-steps">Next Steps</a></li>
       </ul>
     </li>
     <li>
@@ -57,7 +59,9 @@
 
 <p align="justify">
 &ensp;&ensp;&ensp;&ensp;Making real-time data pipelines is really very challenging, since we have to deal with data volume changing, latency, data quality, many data sources, and so on. Another challenge we usually face is related to the processing tools: some of them can't process event-by-event, some of them are too expensive in a real fast scenario, and the deployment of some of them are really challenging. So, in order to better make decisions about our data stack, we have to properly understand the main options availables for storing and processing events.
+</p>
 
+<p align="justify">
 &ensp;&ensp;&ensp;&ensp;In this way, the purpose of this repo is to get in touch with some stream processing capabilities of Bytewax. To achieve this goal, we ran a Kafka cluster in Docker and then produced fake ride (something like Uber's ride) data to a topic. Then, a Bytewax dataflow consumed those records, performed some transformations, and then saved the refined data into another topic.
 </p>
 
@@ -67,7 +71,9 @@
 
 <p align="justify">
 &ensp;&ensp;&ensp;&ensp;In order to be more business-like, we created a fake business context.
+</p>
 
+<p align="justify">
 &ensp;&ensp;&ensp;&ensp;Our company <strong>KAB Rideshare</strong> is a company that provides ride-hailing services. Due to a recent increase in the number of users, KAB Rideshare will have to improve their data architecture and start processing the rides events for analytical purposes. So, our Data Team was given the task of implementing an event processing step. The company already stores all the events in a Kafka cluster, so our task is just to choose and implement the processing tool.
 <br>
 &ensp;&ensp;&ensp;&ensp;After some time of brainstorming, we decided to start with a MVP using a lightweight, but very powerful tool: Bytewax. In this, way, we can get the results quickly so the analytical team can do their job. Once we have gained this time, we can better evaluate other solutions.
@@ -141,6 +147,16 @@
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+
+<!-- NEXT STEPS -->
+## Next Steps
+
+From now on, we'll deploy both Kafka, bytewax, and the data generator to a Kubernetes cluster so we can better explore real world scenarios and the Bytewax scaling capabilities.
+</p>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
 <!-- GETTING STARTED -->
 ## Getting Started
 
@@ -166,15 +182,13 @@
 
 * <a href="https://docs.bytewax.io/stable/guide/getting-started/installing.html" target="_blank"> Bytewax</a>
 
+<p align="justify">
 For other Python's dependencies, please refer to the `requirements.txt`, there we have all dependencies we needed.
+</p>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Reproducing
-
-<p align="justify">
-&ensp;&ensp;&ensp;&ensp;Before we begin, remember to take a look at following three files because they contain some variables related to GCP project ID, bucket names, and so on, that you'll need to change:
-</p>
 
 1. Clone the repo:
     ```sh
@@ -199,8 +213,11 @@ For other Python's dependencies, please refer to the `requirements.txt`, there w
     ```
 
 5. Create Kafka Topics: <br>
+    <p align="justify">
     We'll need two topics: `input-raw-rides`, for events from the data generator, and another for refined events `output-bytewax-enriched-rides`.
     First, we need to access the container:
+    </p>
+
     ```
     docker exec -it broker bash
     ```
@@ -218,7 +235,10 @@ For other Python's dependencies, please refer to the `requirements.txt`, there w
 
     bash run.sh input-raw-rides
     ```
+
+    <p align="justify">
     Remember that `input-raw-rides` is the the topic we want to save the events into.
+    </p>
 
 7. Start the Bytewax dataflow (remember to activate the env created in the second step):
    ```sh
@@ -233,21 +253,16 @@ For other Python's dependencies, please refer to the `requirements.txt`, there w
     Here you can play with Bytewax for checking its performance.
 
 8. Check the refined events
-   here you can do:
+    Here you can do one or many (it's up on you):
   
-    - go to the kafka Control Center (port 9021) and take a look at the topic
+    - go to the kafka Control Center (port 9021) and take a look at the topic;
+
     - access the container and run the following command:
       ```sh
       kafka-console-consumer --bootstrap-server=localhost:9092 --topic=output-bytewax-enriched-rides
       ```
-    - Or you can create a table in apache pinot and play with the data. To do so, just run the script `src/pinot/run.sh` and then check the table in Pinot Controller (port 9000). If you prefer, you can also run the python script `src/pinot/query.py`. Make sure to replace the query with yours.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- NEXT STEPS -->
-## Next Steps
-
-From now on, we'll deploy both Kafka, bytewax, and the data generator to a Kubernetes cluster so we can better explore real world scenarios and the Bytewax scaling capabilities.
+    - <p align="justify">Or you can create a table in apache pinot and play with the data. To do so, just run the script `src/pinot/run.sh` and then check the table in Pinot Controller (port 9000). If you prefer, you can also run the python script `src/pinot/query.py`. Make sure to replace the query with yours.</p>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
