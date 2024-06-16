@@ -13,7 +13,7 @@ from bytewax.dataflow import Dataflow
 import json
 
 
-## HELPER FUNCTIONS
+## ---------- START: HELPER FUNCTIONS ---------- 
 
 currency_converter = CurrencyConverter()
 
@@ -27,7 +27,7 @@ def parse_json(record: KafkaSourceMessage) -> dict:
 def filter_null_price(record):
     return record["price"] > 0
 
-
+# miles to km convertion
 def miles2km(record):
     m2km_value = 0.621371
 
@@ -35,19 +35,20 @@ def miles2km(record):
 
     return record
 
-
+# USD to BRL convertion
 def usd2brl(record):
     record['price'] = currency_converter.convert(record['price'], 'USD', 'BRL')
 
     return record
 
-
+# check if it is dynamic fare
 def check_dynamic_fare(record):
     record['flag_dynamic_fare'] = False if record['surge_multiplier'] <= 1 else True
 
     return record
 
 
+# add event time
 def add_event_time(record):
 
     record['event_time'] = str(datetime.datetime.strptime(record['dt_current_timestamp'], "%Y-%m-%d %H:%M:%S.%f"))
@@ -55,10 +56,12 @@ def add_event_time(record):
     return record
 
 
+# add processing time
 def add_processing_time(record):
     record['processing_time'] = str(datetime.datetime.now())
 
     return record
+
 
 # TODO: this is just for debugging purposes
 def show_record(record): 
@@ -68,10 +71,16 @@ def show_record(record):
     return None
 
 
+# filter desired keys
 def select_keys(record):
 
     key_list = [
-        'user_id', 
+        'user_id',
+        'source',
+        'destination',
+        'flag_dynamic_fare',
+        'price',
+        'distance',
         'event_time', 
         'processing_time'
     ]
@@ -83,9 +92,12 @@ def select_keys(record):
 # Serialize records back to JSON
 def serialize_json(record):
     return json.dumps(record).encode('utf-8')
-## ------
+
+## ---------- END: HELPER FUNCTIONS ---------- 
 
 
+## ---------- START: DATAFLOW ---------- 
+## printing just to make sure this script is running
 print('Starting dataflow..')
 # Kafka broker configuration
 brokers = ["localhost:9092"]
@@ -95,14 +107,16 @@ flow = Dataflow("treating_rides")
 
 # Define the Kafka input
 add_config = {
-    "group.id": "consumer_group1", 
+    "group.id": "bytewax_consumer", 
     "enable.auto.commit": "true", 
-    "auto.commit.interval.ms": 1}
+    "auto.commit.interval.ms": 1
+}
+
 kinp = kop.input(
     "kafka-in", 
     flow, 
     brokers=brokers, 
-    topics=["rides"],
+    topics=["input-raw-rides"],
     # batch_size=1,
     add_config = add_config,
     starting_offset=OFFSET_STORED,
@@ -125,5 +139,6 @@ event_serialized = op.map("serialize_json", event_transformed, serialize_json)
 # Define the Kafka output
 event_processed = op.map("map_to_kafka_message", event_serialized, lambda x: KafkaSinkMessage(None, x))
 kop.output("kafka-out", event_processed, brokers=brokers, topic="output-bytewax-enriched-rides")
-
+## ---------- END: DATAFLOW ---------- 
+## printing just to make sure this script is running
 print('Dataflow running..')
