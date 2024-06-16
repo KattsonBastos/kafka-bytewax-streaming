@@ -149,7 +149,7 @@
 
 
 <!-- NEXT STEPS -->
-## Next Steps
+### Next Steps
 
 From now on, we'll deploy both Kafka, bytewax, and the data generator to a Kubernetes cluster so we can better explore real world scenarios and the Bytewax scaling capabilities.
 </p>
